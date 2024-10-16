@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import base58 from 'bs58';
 import { Keccak } from 'sha3';
 import { pack } from 'msgpackr';
@@ -10,7 +9,9 @@ export default class Key {
   constructor(public data: Uint8Array) { }
 
   static random() {
-    return new Key(new Uint8Array(crypto.randomBytes(32)));
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    return new Key(randomBytes);
   }
 
   // Encode the key as base58
