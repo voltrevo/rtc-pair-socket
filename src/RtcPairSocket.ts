@@ -19,8 +19,8 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   private peerId: string;
 
   constructor(
-    private pairingCode: string,
-    private party: 'alice' | 'bob',
+    readonly pairingCode: string,
+    readonly party: 'alice' | 'bob',
   ) {
     super();
     const key = Key.fromSeed(pairingCode);
