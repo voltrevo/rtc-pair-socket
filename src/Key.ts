@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import base58 from 'bs58';
 import { Keccak } from 'sha3';
 import { pack } from 'msgpackr';
+import { Buffer } from 'buffer';
 
 export default class Key {
   #nominal: undefined;
@@ -24,7 +25,7 @@ export default class Key {
 
   static fromSeed(seed: unknown) {
     const hash = new Keccak(256);
-    hash.update(pack(seed));
+    hash.update(Buffer.from(pack(seed)));
     return new Key(new Uint8Array(hash.digest()));
   }
 }

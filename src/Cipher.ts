@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import aesjs from 'aes-js';
 import { Packr, Unpackr } from 'msgpackr';
 import Key from './Key';
@@ -16,7 +15,8 @@ export default class Cipher {
     const plaintextPadded = new Uint8Array(paddedLen);
     plaintextPadded.set(plaintextBytes, 0);
 
-    const iv = crypto.randomBytes(16);
+    const iv = new Uint8Array(16);
+    crypto.getRandomValues(iv);
     const aesCtr = new aesjs.ModeOfOperation.ctr(this.key.data, new aesjs.Counter(iv));
     const ciphertext = aesCtr.encrypt(plaintextPadded);
 
