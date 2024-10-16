@@ -1,27 +1,41 @@
 import { EventEmitter } from 'ee-typed';
 import Peer, { DataConnection } from 'peerjs';
+import Cipher from './Cipher';
+import Key from './Key';
 
 type Events = {
   open(): void;
   close(): void;
-  message(data: Uint8Array): void;
+  message(data: unknown): void;
   error(err: Error): void;
 };
 
 export default class RtcPairSocket extends EventEmitter<Events> {
   private conn?: DataConnection;
   private closed = false;
+  private cipher: Cipher;
+  private alicePeerId: string;
+  private bobPeerId: string;
+  private peerId: string;
 
   constructor(
     private pairingCode: string,
     private party: 'alice' | 'bob',
   ) {
     super();
+    const key = Key.fromSeed(pairingCode);
+    this.cipher = new Cipher(key);
+
+    const idPrefix = `rtc-pair-socket-${Key.fromSeed(key.data).base58()}`;
+    this.alicePeerId = `${idPrefix}-alice`;
+    this.bobPeerId = `${idPrefix}-bob`;
+    this.peerId = party === 'alice' ? this.alicePeerId : this.bobPeerId;
+
     this.connect().catch((err) => this.emit('error', ensureError(err)));
   }
 
   private async connect() {
-    const peer = new Peer(`rtc-pair-socket-${this.pairingCode}-${this.party}`);
+    const peer = new Peer(this.peerId);
 
     await new Promise((resolve, reject) => {
       peer.on('open', resolve);
@@ -35,12 +49,12 @@ export default class RtcPairSocket extends EventEmitter<Events> {
         resolve => peer.on('connection', resolve),
       );
 
-      const notifyConn = peer.connect(`emp-wasm-${this.pairingCode}-bob`);
+      const notifyConn = peer.connect(this.bobPeerId);
       notifyConn.on('open', () => notifyConn.close());
 
       conn = await connPromise;
     } else {
-      conn = peer.connect(`emp-wasm-${this.pairingCode}-alice`);
+      conn = peer.connect(this.alicePeerId);
 
       await new Promise<void>((resolve, reject) => {
         conn.on('open', resolve);
@@ -50,7 +64,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
           notifyConn.close();
           conn.close();
 
-          conn = peer.connect(`emp-wasm-${this.pairingCode}-alice`);
+          conn = peer.connect(this.alicePeerId);
           conn.on('open', resolve);
           conn.on('error', reject);
         });
@@ -76,7 +90,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
         return;
       }
 
-      this.emit('message', buf);
+      this.emit('message', this.cipher.decrypt(buf));
     });
 
     conn.on('error', (err) => {
@@ -90,12 +104,12 @@ export default class RtcPairSocket extends EventEmitter<Events> {
     this.emit('open');
   }
 
-  send(data: Uint8Array) {
+  send(data: unknown) {
     if (!this.conn) {
       throw new Error('Connection not established');
     }
 
-    this.conn.send(data);
+    this.conn.send(this.cipher.encrypt(data));
   }
 
   close() {
