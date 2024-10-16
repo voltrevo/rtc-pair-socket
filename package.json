@@ -1,6 +1,6 @@
 {
   "name": "rtc-pair-socket",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A WebSocket-like api for secure P2P communication.",
   "main": "dist/src/index.js",
   "scripts": {
