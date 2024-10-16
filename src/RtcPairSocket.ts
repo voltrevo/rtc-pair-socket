@@ -124,6 +124,10 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   isClosed() {
     return this.closed;
   }
+
+  getKey() {
+    return this.cipher.key;
+  }
 }
 
 function ensureError(err: any): Error {
