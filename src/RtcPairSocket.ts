@@ -10,6 +10,7 @@ type Events = {
 
 export default class RtcPairSocket extends EventEmitter<Events> {
   private conn?: DataConnection;
+  private closed = false;
 
   constructor(
     private pairingCode: string,
@@ -56,6 +57,11 @@ export default class RtcPairSocket extends EventEmitter<Events> {
       });
     }
 
+    if (this.closed) {
+      conn.close();
+      return;
+    }
+
     this.conn = conn;
 
     conn.on('data', (data) => {
@@ -80,6 +86,8 @@ export default class RtcPairSocket extends EventEmitter<Events> {
     conn.on('close', () => {
       this.close();
     });
+
+    this.emit('open');
   }
 
   send(data: Uint8Array) {
@@ -91,11 +99,16 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   }
 
   close() {
-    if (this.conn) {
-      this.conn.close();
+    if (!this.closed) {
+      this.conn?.close();
       this.conn = undefined;
+      this.closed = true;
       this.emit('close');
     }
+  }
+
+  isClosed() {
+    return this.closed;
   }
 }
 
