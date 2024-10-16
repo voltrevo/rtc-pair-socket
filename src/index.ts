@@ -1,1 +1,1 @@
-export const foo = 'bar';
+export { default as RtcPairSocket } from './RtcPairSocket';
