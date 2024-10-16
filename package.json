@@ -1,0 +1,16 @@
+{
+  "name": "rtc-pair-socket",
+  "version": "0.0.0",
+  "description": "A WebSocket-like api for secure P2P communication.",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist && tsc"
+  },
+  "keywords": [],
+  "author": "Andrew Morris",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
