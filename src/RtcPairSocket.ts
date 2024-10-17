@@ -54,7 +54,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
 
       conn = await connPromise;
     } else {
-      conn = peer.connect(this.alicePeerId);
+      conn = peer.connect(this.alicePeerId, { reliable: true });
 
       await new Promise<void>((resolve, reject) => {
         conn.on('open', resolve);
@@ -64,7 +64,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
           notifyConn.close();
           conn.close();
 
-          conn = peer.connect(this.alicePeerId);
+          conn = peer.connect(this.alicePeerId, { reliable: true });
           conn.on('open', resolve);
           conn.on('error', reject);
         });
@@ -100,6 +100,12 @@ export default class RtcPairSocket extends EventEmitter<Events> {
     conn.on('close', () => {
       this.close();
     });
+
+    if (!conn.reliable) {
+      // covers the unlikely case where the other side used reliable: false
+      conn.close();
+      throw new Error('Connection is not reliable');
+    }
 
     this.emit('open');
   }
