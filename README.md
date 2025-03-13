@@ -51,6 +51,35 @@ socket.send('Hello, Bob!');
 socket.send([1, 2, 'three']);
 ```
 
+## Turn Servers / Reliability
+
+Out of the box, you might experience reliability issues when users are behind
+NAT networks. Ideally WebRTC enables direct communication between clients, but
+this isn't always successful. In this case, a TURN server can provide a reliable
+fallback option which is basically a relay.
+
+To use it, run a turn server or use a service like
+[ExpressTURN](https://www.expressturn.com/) and provide a third parameter like
+this to `RtcPairSocket`:
+
+```ts
+new RtcPairSocket(pairingCode, party, {
+  iceServers: [
+    // Google's free stun server. It's important to include this one.
+    { urls: "stun:stun.l.google.com:19302" },
+
+    // Your turn server. Replace each field with values specific to your setup.
+    {
+      urls: "turn:your-turn-server.com:3478",
+      username: "your-username",
+      credential: "your-password",
+    },
+  ],
+});
+```
+
+In many cases, `RtcPairSocket` will work without this extra step.
+
 ## Events
 
 - `open`: Emitted when the connection is successfully established.

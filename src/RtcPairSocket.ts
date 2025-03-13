@@ -21,6 +21,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   constructor(
     readonly pairingCode: string,
     readonly party: 'alice' | 'bob',
+    readonly config?: RTCConfiguration,
   ) {
     super();
     const key = Key.fromSeed(pairingCode);
@@ -35,7 +36,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   }
 
   private async connect() {
-    const peer = new Peer(this.peerId);
+    const peer = new Peer(this.peerId, { config: this.config });
 
     await new Promise((resolve, reject) => {
       peer.on('open', resolve);
