@@ -17,6 +17,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
   private alicePeerId: string;
   private bobPeerId: string;
   private peerId: string;
+  private peer: Peer;
 
   constructor(
     readonly pairingCode: string,
@@ -31,41 +32,40 @@ export default class RtcPairSocket extends EventEmitter<Events> {
     this.alicePeerId = `${idPrefix}-alice`;
     this.bobPeerId = `${idPrefix}-bob`;
     this.peerId = party === 'alice' ? this.alicePeerId : this.bobPeerId;
+    this.peer = new Peer(this.peerId, { config: this.config });
 
     this.connect().catch((err) => this.emit('error', ensureError(err)));
   }
 
   private async connect() {
-    const peer = new Peer(this.peerId, { config: this.config });
-
     await new Promise((resolve, reject) => {
-      peer.on('open', resolve);
-      peer.on('error', reject);
+      this.peer.on('open', resolve);
+      this.peer.on('error', reject);
     });
 
     let conn: DataConnection;
 
     if (this.party === 'alice') {
       const connPromise = new Promise<DataConnection>(
-        resolve => peer.on('connection', resolve),
+        resolve => this.peer.on('connection', resolve),
       );
 
-      const notifyConn = peer.connect(this.bobPeerId);
+      const notifyConn = this.peer.connect(this.bobPeerId);
       notifyConn.on('open', () => notifyConn.close());
 
       conn = await connPromise;
     } else {
-      conn = peer.connect(this.alicePeerId, { reliable: true });
+      conn = this.peer.connect(this.alicePeerId, { reliable: true });
 
       await new Promise<void>((resolve, reject) => {
         conn.on('open', resolve);
         conn.on('error', reject);
 
-        peer.on('connection', (notifyConn) => {
+        this.peer.on('connection', (notifyConn) => {
           notifyConn.close();
           conn.close();
 
-          conn = peer.connect(this.alicePeerId, { reliable: true });
+          conn = this.peer.connect(this.alicePeerId, { reliable: true });
           conn.on('open', resolve);
           conn.on('error', reject);
         });
@@ -123,6 +123,7 @@ export default class RtcPairSocket extends EventEmitter<Events> {
     if (!this.closed) {
       this.conn?.close();
       this.conn = undefined;
+      this.peer.destroy();
       this.closed = true;
       this.emit('close');
     }
